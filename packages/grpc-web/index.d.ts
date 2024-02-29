@@ -98,6 +98,7 @@ declare module "grpc-web" {
     withCredentials?: boolean;
     unaryInterceptors?: UnaryInterceptor<unknown, unknown>[];
     streamInterceptors?: StreamInterceptor<unknown, unknown>[];
+    workerScope?: WorkerGlobalScope;
   }
 
   export class GrpcWebClientBase extends AbstractClientBase {

@@ -38,6 +38,7 @@ const MethodDescriptor = goog.requireType('grpc.web.MethodDescriptor');
 const Request = goog.require('grpc.web.Request');
 const RpcError = goog.require('grpc.web.RpcError');
 const StatusCode = goog.require('grpc.web.StatusCode');
+const FetchXmlHttpFactory = goog.require('goog.net.FetchXmlHttpFactory');
 const XhrIo = goog.require('goog.net.XhrIo');
 const googCrypt = goog.require('goog.crypt.base64');
 const {Status} = goog.require('grpc.web.Status');
@@ -91,6 +92,13 @@ class GrpcWebClientBase {
      */
     this.unaryInterceptors_ = options.unaryInterceptors ||
         goog.getObjectByName('unaryInterceptors', options) || [];
+
+    /**
+     * @const {WorkerGlobalScope}
+     * @private {boolean}
+     */
+    this.workerScope = options.workerScope ||
+        goog.getObjectByName('workerScope', options) || null;
 
     /** @const @private {?XhrIo} */
     this.xhrIo_ = xhrIo || null;
@@ -173,6 +181,15 @@ class GrpcWebClientBase {
         this, methodDescriptor.createRequest(requestMessage, metadata)));
   }
 
+  createXhrIo_() {
+    if (this.workerScope) {
+      return new XhrIo(new FetchXmlHttpFactory({
+        worker: this.workerScope
+      }));
+    }
+    return new XhrIo();
+  }
+
   /**
    * @private
    * @template REQUEST, RESPONSE
@@ -184,7 +201,7 @@ class GrpcWebClientBase {
     const methodDescriptor = request.getMethodDescriptor();
     let path = hostname + methodDescriptor.getName();
 
-    const xhr = this.xhrIo_ ? this.xhrIo_ : new XhrIo();
+    const xhr = this.xhrIo_ ? this.xhrIo_ : this.createXhrIo_();
     xhr.setWithCredentials(this.withCredentials_);
 
     const genericTransportInterface = {
